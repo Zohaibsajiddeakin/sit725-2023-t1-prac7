@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Socket.IO Chat</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f5f5f5;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+    #chat-container {
+      width: 400px;
+      background: #ffffff;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    #controls {
+      padding: 10px;
+      background: #007bff;
+      color: white;
+      display: flex;
+      justify-content: space-between;
+    }
+    #controls button {
+      padding: 10px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    #controls button:disabled {
+      background: #cccccc;
+    }
+    #messages {
+      list-style-type: none;
+      margin: 0;
+      padding: 10px;
+      height: 300px;
+      overflow-y: scroll;
+      border-bottom: 1px solid #ddd;
+    }
+    #messages li {
+      padding: 8px;
+      margin-bottom: 8px;
+      background: #f1f1f1;
+      border-radius: 5px;
+    }
+    #input-container {
+      display: flex;
+      padding: 10px;
+    }
+    #messageInput {
+      padding: 10px;
+      width: calc(100% - 60px);
+      border: 1px solid #ddd;
+      border-radius: 5px 0 0 5px;
+      outline: none;
+    }
+    #sendButton {
+      padding: 10px;
+      width: 50px;
+      border: none;
+      background: #007bff;
+      color: white;
+      border-radius: 0 5px 5px 0;
+      cursor: pointer;
+    }
+    #sendButton:disabled {
+      background: #cccccc;
+    }
+  </style>
+</head>
+<body>
+  <div id="chat-container">
+    <div id="controls">
+      <button id="connectButton">Connect</button>
+      <button id="disconnectButton" disabled>Disconnect</button>
+    </div>
+    <ul id="messages"></ul>
+    <div id="input-container">
+      <input id="messageInput" autocomplete="off" placeholder="Type a message..." disabled />
+      <button id="sendButton" disabled>Send</button>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    var socket;
+    var messages = document.getElementById('messages');
+    var input = document.getElementById('messageInput');
+    var sendButton = document.getElementById('sendButton');
+    var connectButton = document.getElementById('connectButton');
+    var disconnectButton = document.getElementById('disconnectButton');
+
+    connectButton.addEventListener('click', function() {
+      socket = io();
+      
+      socket.on('chat message', function(msg) {
+        var item = document.createElement('li');
+        item.textContent = msg;
+        messages.appendChild(item);
+        window.scrollTo(0, document.body.scrollHeight);
+      });
+
+      socket.on('connect', function() {
+        connectButton.disabled = true;
+        disconnectButton.disabled = false;
+        input.disabled = false;
+        sendButton.disabled = false;
+        var item = document.createElement('li');
+        item.textContent = 'You are connected';
+        messages.appendChild(item);
+        window.scrollTo(0, document.body.scrollHeight);
+      });
+
+      socket.on('disconnect', function() {
+        connectButton.disabled = false;
+        disconnectButton.disabled = true;
+        input.disabled = true;
+        sendButton.disabled = true;
+        var item = document.createElement('li');
+        item.textContent = 'You are disconnected';
+        messages.appendChild(item);
+        window.scrollTo(0, document.body.scrollHeight);
+      });
+
+      // Listen for random number event
+      socket.on('number', function(msg) {
+        console.log('Random number: ' + msg);
+        var item = document.createElement('li');
+        item.textContent = 'Random number: ' + msg;
+        messages.appendChild(item);
+      });
+    });
+
+    disconnectButton.addEventListener('click', function() {
+      socket.disconnect();
+    });
+
+    sendButton.addEventListener('click', function() {
+      if (input.value) {
+        socket.emit('chat message', input.value);
+        input.value = '';
+      }
+    });
+
+    input.addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        sendButton.click();
+      }
+    });
+  </script>
+</body>
+</html>
